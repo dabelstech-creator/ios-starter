@@ -1,0 +1,21 @@
+name: Build and test
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen || true
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Run tests
+        run: |
+          set -o pipefail
+          xcodebuild -project ios-starter.xcodeproj -scheme ios-starter -destination 'platform=iOS Simulator,name=iPhone 14' test | xcpretty || true

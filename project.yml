@@ -1,0 +1,33 @@
+name: ios-starter
+
+options:
+  bundleIdPrefix: com.dabelstech-creator
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+targets:
+  ios-starter:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dabelstech-creator.ios-starter
+    schemes:
+      - name: ios-starter
+        shared: true
+
+  ios-starterTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Tests
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.dabelstech-creator.ios-starter.tests
