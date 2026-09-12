@@ -1,0 +1,20 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload a new Beta build to TestFlight"
+  lane :beta do
+    # Build the app
+    build_app(
+      scheme: "ios-starter",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.dabelstech-creator.ios-starter" => ENV['PROVISIONING_PROFILE_NAME'] || ""
+        }
+      }
+    )
+
+    # Upload to TestFlight / App Store
+    upload_to_app_store(skip_metadata: true, skip_screenshots: true)
+  end
+end
