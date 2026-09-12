@@ -3,12 +3,26 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload a new Beta build to TestFlight"
   lane :beta do
-    # Configure App Store Connect API key from the decoded AuthKey.p8 file
-    api_key = app_store_connect_api_key(
-      key_id: ENV['APP_STORE_CONNECT_KEY_ID'],
-      issuer_id: ENV['APP_STORE_CONNECT_ISSUER_ID'],
-      key_filepath: 'AuthKey.p8'
-    )
+    # Use match to fetch certificates and provisioning profiles from a secure repo (if configured)
+    if ENV['MATCH_GIT_URL'] && ENV['MATCH_PASSWORD']
+      match(
+        type: "appstore",
+        readonly: true,
+        git_url: ENV['MATCH_GIT_URL'],
+        git_branch: ENV['MATCH_GIT_BRANCH'] || 'main',
+        username: ENV['APPLE_ID']
+      )
+    end
+
+    # Configure App Store Connect API key from the decoded AuthKey.p8 file (if provided)
+    api_key = nil
+    if File.exist?("AuthKey.p8") && ENV['APP_STORE_CONNECT_KEY_ID'] && ENV['APP_STORE_CONNECT_ISSUER_ID']
+      api_key = app_store_connect_api_key(
+        key_id: ENV['APP_STORE_CONNECT_KEY_ID'],
+        issuer_id: ENV['APP_STORE_CONNECT_ISSUER_ID'],
+        key_filepath: 'AuthKey.p8'
+      )
+    end
 
     # Increment build number using a timestamp to ensure uniqueness
     now = Time.now.strftime("%s")
@@ -28,7 +42,11 @@ platform :ios do
       }
     )
 
-    # Upload to TestFlight / App Store using the API key configured above
-    upload_to_app_store(skip_metadata: true, skip_screenshots: true, api_key: api_key)
+    # Upload to TestFlight / App Store using the API key if available
+    if api_key
+      upload_to_app_store(skip_metadata: true, skip_screenshots: true, api_key: api_key)
+    else
+      upload_to_app_store(skip_metadata: true, skip_screenshots: true)
+    end
   end
 end

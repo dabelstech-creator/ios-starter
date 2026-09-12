@@ -2,8 +2,8 @@ name: Deploy to TestFlight
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Install Ruby and Bundler
         uses: ruby/setup-ruby@v1
@@ -42,5 +44,8 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BRANCH: ${{ secrets.MATCH_GIT_BRANCH }}
         run: |
           bundle exec fastlane ios beta
