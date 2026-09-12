@@ -3,7 +3,21 @@ default_platform(:ios)
 platform :ios do
   desc "Build and upload a new Beta build to TestFlight"
   lane :beta do
-    # Build the app
+    # Configure App Store Connect API key from the decoded AuthKey.p8 file
+    api_key = app_store_connect_api_key(
+      key_id: ENV['APP_STORE_CONNECT_KEY_ID'],
+      issuer_id: ENV['APP_STORE_CONNECT_ISSUER_ID'],
+      key_filepath: 'AuthKey.p8'
+    )
+
+    # Increment build number using a timestamp to ensure uniqueness
+    now = Time.now.strftime("%s")
+    increment_build_number(
+      xcodeproj: "ios-starter.xcodeproj",
+      build_number: now
+    )
+
+    # Build the app for App Store / TestFlight
     build_app(
       scheme: "ios-starter",
       export_method: "app-store",
@@ -14,7 +28,7 @@ platform :ios do
       }
     )
 
-    # Upload to TestFlight / App Store
-    upload_to_app_store(skip_metadata: true, skip_screenshots: true)
+    # Upload to TestFlight / App Store using the API key configured above
+    upload_to_app_store(skip_metadata: true, skip_screenshots: true, api_key: api_key)
   end
 end

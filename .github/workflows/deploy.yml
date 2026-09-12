@@ -2,8 +2,8 @@ name: Deploy to TestFlight
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*.*.*'
 
 jobs:
   deploy:
@@ -27,39 +27,20 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
 
-      - name: Decode provisioning profile
-        if: ${{ secrets.PROVISIONING_PROFILE != '' }}
+      - name: Decode App Store Connect API key
+        if: ${{ secrets.APP_STORE_CONNECT_API_KEY != '' }}
         run: |
-          echo "$PROVISIONING_PROFILE" | base64 --decode > ios_provision.mobileprovision
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          UUID=$(security cms -D -i ios_provision.mobileprovision | plutil -extract UUID xml1 -o - - | xmllint --xpath 'string(//string)' -)
-          cp ios_provision.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
+          echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode > AuthKey.p8
         env:
-          PROVISIONING_PROFILE: ${{ secrets.PROVISIONING_PROFILE }}
-
-      - name: Import certificate
-        if: ${{ secrets.CERTIFICATE_P12 != '' }}
-        run: |
-          echo "$CERTIFICATE_P12" | base64 --decode > certificate.p12
-          security create-keychain -p actions actions.keychain
-          security import certificate.p12 -k ~/Library/Keychains/actions.keychain -P "$CERTIFICATE_P12_PASSWORD" -T /usr/bin/codesign
-          security list-keychains -s ~/Library/Keychains/actions.keychain
-          security default-keychain -s ~/Library/Keychains/actions.keychain
-          security set-keychain-settings -t 3600 -u ~/Library/Keychains/actions.keychain
-        env:
-          CERTIFICATE_P12: ${{ secrets.CERTIFICATE_P12 }}
-          CERTIFICATE_P12_PASSWORD: ${{ secrets.CERTIFICATE_P12_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
 
       - name: Install dependencies (bundle)
         run: bundle install
 
       - name: Build and upload to TestFlight (fastlane)
         env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
-          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           PROVISIONING_PROFILE_NAME: ${{ secrets.PROVISIONING_PROFILE_NAME }}
         run: |
           bundle exec fastlane ios beta
